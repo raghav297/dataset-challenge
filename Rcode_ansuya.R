@@ -1,3 +1,4 @@
+#stuff
 #install.packages("rjson")
 library(rjson)
 business= "yelp_academic_dataset_business.json"
