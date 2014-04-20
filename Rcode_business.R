@@ -1,0 +1,1 @@
+zip_table = read.table("bid_to_zip.txt", sep = "\t", col.names = c("bid","zip"))
