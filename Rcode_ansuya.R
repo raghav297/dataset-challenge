@@ -54,6 +54,9 @@ library(plyr)
 biz_main_cat_count=ddply(biz_id_main_cat, .(main_cat), summarise, count=length(main_cat))
 biz_zip_count=ddply(biz_id_zip, .(zip), summarise, count=length(zip))
 
+biz_long_lat= data.frame(biz_id, biz_long, biz_lat)
+colnames(biz_long_lat)= c("businessId", "longitude", "latitude")
+
 #making lists for review data
 review.stars = unlist(lapply(review_data, function(x) x$stars))
 review.id = unlist(lapply(review_data, function(x) x$review_id))
@@ -68,8 +71,19 @@ review.vote_useful= unlist(lapply(review_data, function(x) x$votes$useful))
 #making a data frame from user lists
 review_table= data.frame(review.id, review.post_date, review.stars, review.vote_funny, 
 	review.vote_cool, review.vote_useful, review.business_id, review.user_id)
-colnames(user_table)=c("reviewId", "postDate", "stars", "voteFunny", "voteCool", "voteUseful", "businessId", "userId")
+colnames(review_table)=c("reviewId", "postDate", "stars", "voteFunny", "voteCool", "voteUseful", "businessId", "userId")
 
+#finding lat and long for all businesses that a user posted for 
+user_business=data.frame(review_table$user_id, review_table$business_id)
+colnames(user_business)= c("userId", "businessId")
+
+library(data.table)
+user_business=data.table(user_business)
+setkey(user_business, businessId)
+biz_long_lat=data.table(biz_long_lat)
+setkey(biz_long_lat, businessId)
+user_business=user_business[biz_long_lat, nomatch=0]
+setkey(user_business, userId)
 
 #plotting histograms 
 #business histograms
