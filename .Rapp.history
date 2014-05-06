@@ -1,4 +1,7 @@
-install.packages("rjson")
+zip_table = read.table("bid_to_zip.txt", sep = "\t", col.names = c("bid","zip"))
+head(zip_table)
+stuff#
+#install.packages("rjson")#
 library(rjson)#
 business= "yelp_academic_dataset_business.json"#
 raw_biz= scan(business, what="raw()", sep="\n")#
@@ -34,24 +37,19 @@ user.fans= unlist(lapply(user_data, function(x) x$fans))#
 #making a data frame from user lists#
 user_table= data.frame(user.id, user.join_date, user.avg_stars, user.review_count, user.vote_funny, #
 	user.vote_cool, user.vote_useful, user.fans)#
-colnames(user_table)=c("userId", "joinDate", "avgStars", "reviewCount", "voteFunny", "voteCool", "voteUseful", "fans")
-head(user_data)
-head(raw_data)
-ls()
-head(user_table)
-making lists for business data#
+colnames(user_table)=c("userId", "joinDate", "avgStars", "reviewCount", "voteFunny", "voteCool", "voteUseful", "fans")#
+#making lists for business data#
 biz_id= unlist(lapply(biz_data, function(x) x$business_id))#
 biz_long= unlist(lapply(biz_data, function(x) x$longitude))#
 biz_lat= unlist(lapply(biz_data, function(x) x$latitude))#
-biz_category=list(); for(i in 1:15585){ biz_category[[i]]=biz_data[[i]]$categories}
-head(biz_category)
-head(biz_data)
-biz_data[[1]]
-biz_data[[1]]$business_id
-biz_data[[1]]
-plot(10,4)
-hist(user.avg_stars, main="Histogram of Average Star Ratings", xlab="Average Stars", col="darkcyan", border="white", lwd="2")
-install.packages("maps")
+biz_category=list(); for(i in 1:15585){ biz_category[[i]]=biz_data[[i]]$categories}#
+#plotting histograms #
+par( mfrow=c(2,2))#
+hist(user.avg_stars, main="Histogram of Average Star Ratings", xlab="Average Stars", col="darkcyan", border="white", lwd="2")#
+hist(user.review_count, main="Histogram of Review Counts", xlab="Review Counts", col="orange", border="white", lwd="2")#
+hist(user.fans, main="Histogram of Fans", xlab="Fans", col="grey", border="white", lwd="2")#
+hist(user.join_date, "months", main="Histogram of Joining Yelp", xlab="Join Date",lwd="2", format = "%d %b")#
+#
 library(maps)#
 #map('state', plot = TRUE, fill = FALSE, col = palette())#
 colors()[grep("green",colors())]#
@@ -60,14 +58,66 @@ map('county', 'Arizona', plot = TRUE, fill = TRUE, col="springgreen3"  , bg="whi
 title("Businesses in Yelp in Phoenix")#
 points(x=biz_long, y=biz_lat, col="yellow", pch=20)#
 map.axes()
-pwd
-pwd()
-head(user_data)
-d = read.table("biz_to_zip.txt", sep = "\t")
-d = read.table("biz_to_zip.txt", sep = "\t")
-ls()
-d = read.table("bid_to_zip.txt", sep = "\t")
-d
-head(d)
-colnames(d) = c("bid", "zip")
-head(d)
+head(biz_id)
+head(biz_category)
+biz_category
+write.table(biz_category, file = "categories.txt")
+typeof(biz_category)
+d <- data.frame(biz_category)
+library("tm")#
+library("topicmodels")#
+#
+stopWords <- c('a','able','about','across','after','all','almost','also','am','among','an','and','any','are','as','at','be','because','been','but','by','can','cannot','could','dear','did','do','does','either','else','ever','every','for','from','get','got','had','has','have','he','her','hers','him','his','how','however','i','if','in','into','is','it','its','just','least','let','like','likely','may','me','might','most','must','my','neither','no','nor','not','of','off','often','on','only','or','other','our','own','rather','said','say','says','she','should','since','so','some','than','that','the','their','them','then','there','these','they','this','tis','to','too','twas','us','wants','was','we','were','what','when','where','which','while','who','whom','why','will','with','would','yet','you','your','embed','quote','http')#
+#
+filesPath <- "/Users/raghav297/Documents/UCLA/UCLA_Spring_14/CS246/dataset-challenge/corpus/"#
+#
+corpus <- Corpus(DirSource(filesPath, encoding = "UTF-8") , readerControl = list(lange="english"))#
+#
+corpus <- tm_map(corpus, tolower)#
+corpus <- tm_map(corpus, removeNumbers)#
+corpus <- tm_map(corpus, stripWhitespace)#
+corpus <- tm_map(corpus, removeWords, c(stopWords, stopwords("english")))#
+dtm <- DocumentTermMatrix(corpus)#
+rowTotals <- apply(dtm , 1, sum)#
+dtm2   <- dtm[rowTotals> 0,]#
+#
+lda_result <- LDA(dtm2, k, method="VEM")
+lda_result <- LDA(dtm2, 10, method="VEM")
+terms(lda_result,10)
+terms(lda_result,20)
+library("tm")#
+> library("topicmodels")#
+> #
+> stopWords <- c('a','able','about','across','after','all','almost','also','am','among','an','and','any','are','as','at','be','because','been','but','by','can','cannot','could','dear','did','do','does','either','else','ever','every','for','from','get','got','had','has','have','he','her','hers','him','his','how','however','i','if','in','into','is','it','its','just','least','let','like','likely','may','me','might','most','must','my','neither','no','nor','not','of','off','often','on','only','or','other','our','own','rather','said','say','says','she','should','since','so','some','than','that','the','their','them','then','there','these','they','this','tis','to','too','twas','us','wants','was','we','were','what','when','where','which','while','who','whom','why','will','with','would','yet','you','your','embed','quote','http')#
+> #
+> filesPath <- "/Users/raghav297/Documents/UCLA/UCLA_Spring_14/CS246/dataset-challenge/corpus/"#
+> #
+> corpus <- Corpus(DirSource(filesPath, encoding = "UTF-8") , readerControl = list(lange="english"))#
+> #
+> corpus <- tm_map(corpus, tolower)#
+> corpus <- tm_map(corpus, removeNumbers)#
+> corpus <- tm_map(corpus, stripWhitespace)#
+> corpus <- tm_map(corpus, removeWords, c(stopWords, stopwords("english")))#
+> dtm <- DocumentTermMatrix(corpus)#
+> rowTotals <- apply(dtm , 1, sum)#
+> dtm2   <- dtm[rowTotals> 0,]
+library("tm")#
+library("topicmodels")#
+#
+stopWords <- c('a','able','about','across','after','all','almost','also','am','among','an','and','any','are','as','at','be','because','been','but','by','can','cannot','could','dear','did','do','does','either','else','ever','every','for','from','get','got','had','has','have','he','her','hers','him','his','how','however','i','if','in','into','is','it','its','just','least','let','like','likely','may','me','might','most','must','my','neither','no','nor','not','of','off','often','on','only','or','other','our','own','rather','said','say','says','she','should','since','so','some','than','that','the','their','them','then','there','these','they','this','tis','to','too','twas','us','wants','was','we','were','what','when','where','which','while','who','whom','why','will','with','would','yet','you','your','embed','quote','http')#
+#
+filesPath <- "/Users/raghav297/Documents/UCLA/UCLA_Spring_14/CS246/dataset-challenge/corpus/"#
+#
+corpus <- Corpus(DirSource(filesPath, encoding = "UTF-8") , readerControl = list(lange="english"))#
+#
+corpus <- tm_map(corpus, tolower)#
+corpus <- tm_map(corpus, removeNumbers)#
+corpus <- tm_map(corpus, stripWhitespace)#
+corpus <- tm_map(corpus, removeWords, c(stopWords, stopwords("english")))#
+dtm <- DocumentTermMatrix(corpus)#
+rowTotals <- apply(dtm , 1, sum)#
+dtm2   <- dtm[rowTotals> 0,]
+k <- 10#
+lda_result <- LDA(dtm2, k, method="VEM")
+terms(lda_result,10)
+terms(lda_result,20)

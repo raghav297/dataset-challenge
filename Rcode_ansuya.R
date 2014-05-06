@@ -43,6 +43,7 @@ biz_id= unlist(lapply(biz_data, function(x) x$business_id))
 biz_long= unlist(lapply(biz_data, function(x) x$longitude))
 biz_lat= unlist(lapply(biz_data, function(x) x$latitude))
 biz_category=list(); for(i in 1:15585){ biz_category[[i]]=biz_data[[i]]$categories}
+write.table(biz_category, file = "categories.txt")
 
 
 #plotting histograms 
