@@ -54,6 +54,23 @@ library(plyr)
 biz_main_cat_count=ddply(biz_id_main_cat, .(main_cat), summarise, count=length(main_cat))
 biz_zip_count=ddply(biz_id_zip, .(zip), summarise, count=length(zip))
 
+#making lists for review data
+review.stars = unlist(lapply(review_data, function(x) x$stars))
+review.id = unlist(lapply(review_data, function(x) x$review_id))
+review.user_id = unlist(lapply(review_data, function(x) x$user_id))
+review.business_id = unlist(lapply(review_data, function(x) x$business_id))
+review.post_date= unlist(lapply(review_data, function(x) x$date))
+review.post_date= as.Date(review.post_date)
+review.vote_funny= unlist(lapply(review_data, function(x) x$votes$funny))
+review.vote_cool= unlist(lapply(review_data, function(x) x$votes$cool))
+review.vote_useful= unlist(lapply(review_data, function(x) x$votes$useful))
+
+#making a data frame from user lists
+review_table= data.frame(review.id, review.post_date, review.stars, review.vote_funny, 
+	review.vote_cool, review.vote_useful, review.business_id, review.user_id)
+colnames(user_table)=c("reviewId", "postDate", "stars", "voteFunny", "voteCool", "voteUseful", "businessId", "userId")
+
+
 #plotting histograms 
 #business histograms
 
