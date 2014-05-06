@@ -1,4 +1,3 @@
-#stuff
 #install.packages("rjson")
 library(rjson)
 business= "yelp_academic_dataset_business.json"
@@ -43,14 +42,40 @@ biz_id= unlist(lapply(biz_data, function(x) x$business_id))
 biz_long= unlist(lapply(biz_data, function(x) x$longitude))
 biz_lat= unlist(lapply(biz_data, function(x) x$latitude))
 biz_category=list(); for(i in 1:15585){ biz_category[[i]]=biz_data[[i]]$categories}
+biz_stars=unlist(lapply(biz_data, function(x) x$stars))
+biz_review_count=unlist(lapply(biz_data, function(x) x$review_count))
 
+biz_id_zip=read.table("/Users/Work/Documents/CS246_Proj/dataset-challenge/bid_to_zip.txt", sep="\t", header=FALSE)
+colnames(biz_id_zip)= c("business_id", "zip")
+biz_id_main_cat=read.table("/Users/Work/Dropbox/UCLA Courses/Spring 2014/CS246/Project/main_categories.txt", sep="\t", header=FALSE)
+colnames(biz_id_main_cat)= c("business_id", "main_cat")
+
+library(plyr)
+biz_main_cat_count=ddply(biz_id_main_cat, .(main_cat), summarise, count=length(main_cat))
+biz_zip_count=ddply(biz_id_zip, .(zip), summarise, count=length(zip))
 
 #plotting histograms 
+#business histograms
+
+par(mfrow=c(2,2))
+hist(biz_stars, main="Histogram of Business Star Ratings", xlab="Stars", col="royalblue", border="white", lwd="2")
+hist(log10(biz_review_count), main="Histogram of Review Counts", xlab="log10(Review Counts)", col="orange", border="white", lwd="2")
+bplot_1= barplot(biz_zip_count$count, main="Frequency of Unique Zipcodes", xlab="Zipcode", ylab="Frequency", lwd=2, col="seagreen", xaxt="n")
+#text(cex=0.8, x=bplot_1-.35, y=-.25, labels= as.character(biz_zip_count$zip), xpd=TRUE, srt=45, pos=1)
+bplot_2= barplot(biz_main_cat_count$count, main="Frequency of Main Business Categories", xlab="Business Category",
+	ylab="Frequency", lwd=2, col="red")
+text(cex=0.8, x=bplot_2, y= 3000, labels= as.character(biz_main_cat_count$main_cat), xpd=TRUE, srt=90, pos=1)
+
+
+
+#user histograms
 par( mfrow=c(2,2))
 hist(user.avg_stars, main="Histogram of Average Star Ratings", xlab="Average Stars", col="darkcyan", border="white", lwd="2")
-hist(user.review_count, main="Histogram of Review Counts", xlab="Review Counts", col="orange", border="white", lwd="2")
-hist(user.fans, main="Histogram of Fans", xlab="Fans", col="grey", border="white", lwd="2")
+hist(log10(user.review_count), main="Histogram of Review Counts", xlab="log10(Review Counts)", col="orange", border="white", lwd="2")
+hist(log10(user.fans), main="Histogram of Fans", xlab="log10(Fans)", col="grey", border="white", lwd="2")
 hist(user.join_date, "months", main="Histogram of Joining Yelp", xlab="Join Date",lwd="2", format = "%d %b")
+
+
 
 library(maps)
 #map('state', plot = TRUE, fill = FALSE, col = palette())
