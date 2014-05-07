@@ -80,6 +80,19 @@ colnames(review_table)=c("reviewId", "postDate", "stars", "voteFunny", "voteCool
 user_businessFood=subset(review_table, review_table$businessId %in% bizFood)[,c(8,7)]
 # 53670 users and 6570 businesses in food/restaurants category 
 
+#CONSIDERING ONLY USERS WHO HAVE GONE TO MORE THAN ONE PLACE
+userBizCount=ddply(user_businessFood, .(userId), summarise, count=length(businessId))
+#there are 27928 users how have reviewed 1 place and thus have sumDistances metric coming to 0 
+userTwoOrMoreBiz=subset(userBizCount, userBizCount$count>1)$userId
+#Now we are considering 25742 unique users with reviews for more than one food/restaurant business among 6561 businesses 
+#This means those 27928 users only reviewed among 9 businesses
+
+userWithSumDistZero=read.table("userWithSumDistZero.txt")$userWithSumDistZero
+indicesToRemove=match(userWithSumDistZero, userTwoOrMoreBiz)
+usersToConsider= userTwoOrMoreBiz[-indicesToRemove]
+user_businessFood=subset(user_businessFood, user_businessFood$userId %in% usersToConsider)
+#Taking 25742-291=25451 users and 6561 businesses
+
 library(data.table)
 user_businessFood=data.table(user_businessFood)
 setkey(user_businessFood, businessId)
@@ -90,6 +103,8 @@ user_businessFood=user_businessFood[biz_long_lat_food, nomatch=0]
 setkey(user_businessFood, userId)
 
 #take average distance of all location data points per user 
+findMean = function(user_businessFood) {
+
 userMeanLongLatFood=data.frame(user_businessFood$userId, user_businessFood$longitude, user_businessFood$latitude)
 colnames(userMeanLongLatFood)=c("userId", "longitude", "latitude")
 userMeanLongLatFood$userId= factor(userMeanLongLatFood$userId)
@@ -100,28 +115,101 @@ setkey(userMeanLongLatFood, userId)
 user_businessFood=data.table(user_businessFood)
 setkey(user_businessFood,userId)
 user_businessFood=user_businessFood[userMeanLongLatFood, nomatch=0]
+return(user_businessFood)
+}
+
+user_businessFood= findMean(user_businessFood)
 
 #find distance of all data points per user from the mean for that user
 user_businessFood$distanceFromMean= sqrt(((user_businessFood$longitude - user_businessFood$meanLong)^2) + ((user_businessFood$latitude - user_businessFood$meanLat)^2))
 
 #normalize the distances for that user
 userSumDistancesFood= ddply(user_businessFood, .(userId), summarise, sumDistances= sum(distanceFromMean))
+summary(userSumDistancesFood)
 
-#CONSIDERING ONLY USERS WHO HAVE GONE TO MORE THAN ONE PLACE
-userbizFood=data.frame(user_businessFood$userId, user_businessFood$businessId)
-colnames(userbizFood)=c("userId", "businessId")
-userBizCount=ddply(userbizFood, .(userId), summarise, count=length(businessId))
-#there are 27928 users how have reviewed 1 place and thus have sumDistances metric coming to 0
+###STILL 291 users with 0 sum of distance from mean because their mean is also 0 as the restaurants they visited were in the same locations
+###check if these users went to only one place and reviewed that multiple times or only went to different places in the same lat and long (23 such users)
+##userWithSumDistZero=subset(userSumDistancesFood, sumDistances==0)$userId
+##userBizWithSumDistZero=subset(user_businessFood, user_businessFood$userId %in% userWithSumDistZero)
+##userBizWithSumDistZero=data.frame(userBizWithSumDistZero$userId, userBizWithSumDistZero$businessId)
+##colnames(userBizWithSumDistZero)=c("userId", "businessId")
+###counting if there are users who posted in different businesses belonging to the same long and lat 
+##userBizWithSumDistZero.count= ddply(userBizWithSumDistZero, .(userId), summarise, count=length(unique(businessId)))
+##users2BizSameLoc=subset(userBizWithSumDistZero.count, count>1)$userId
+##write.table("userWithSumDistZero.txt")
+##
 
-userSumDistancesFoodSubset=
-
-data.table(userSumDistancesFood, userId)
+userSumDistancesFood= data.table(userSumDistancesFood)
 setkey(userSumDistancesFood, userId)
 user_businessFood=user_businessFood[userSumDistancesFood, nomatch=0]
 user_businessFood$normDistanceFromMean= user_businessFood$distanceFromMean/user_businessFood$sumDistances
+#there are 3237 unique businesses spanning 110009 users which have distance from mean >0.5 
+# hist(user_businessFood$normDistanceFromMean)
 
-#remove outliers i.e. all normalized distances from the mean having value less than 0.5 
+#finding outlier for each user using outlier()
+#instal.packages("outliers")
+#install.packages("Rmisc")
+library(outliers) 
+library(Rmisc)
 
+#any distance from mean measure greater than the upper bound of 95% confidence interval of the data points for a user are considered outliers
+user95CIUpper_Food=ddply(user_businessFood, .(userId), summarise, CIUpper=CI(normDistanceFromMean, ci=0.95)[1])
+summary(user95CIUpper_Food)
+#as suspected the median for the upper bounds of 95% CI for each user is 0.5. Thus our intuition for taking 0.5 as threshold is correct as well
+
+#removing all data points from each user group that have distance measure from mean > Upper bound of 95% CI
+user95CIUpper_Food=data.table(user95CIUpper_Food)
+setkey(user95CIUpper_Food, userId)
+user_businessFood=user_businessFood[user95CIUpper_Food, nomatch=0]
+userBizNoOutliers= subset(user_businessFood, normDistanceFromMean <= CIUpper)
+# 98 unique businesses behaved as outliers for some user or the other
+
+###NOT DOING THIS 
+##remove outliers i.e. all normalized distances from the mean having value greater than 0.5 
+##userBizNoOutliers=subset(user_businessFood, user_businessFood$normDistanceFromMean<0.5)
+###
+
+#find new mean/ centroid of location points per user after removing outlier data points
+userBizNoOutliers=findMean(userBizNoOutliers)
+userNewMean=data.frame(userBizNoOutliers$userId, userBizNoOutliers$businessId, userBizNoOutliers$meanLong.1, userBizNoOutliers$meanLat.1)
+#Take unique rows
+colnames(userNewMean)=c("userId", "businessId", "newMeanLong", "newMeanLat")
+#setting key as (userId, businessId)
+userNewMean=data.table(userNewMean)
+setkey(userNewMean, userId, businessId)
+setkey(user_businessFood, userId, businessId)
+#append the new means to the entire dataset 
+user_businessFood=user_businessFood[userNewMean, nomatch=0]
+#find distance of all data points per user from the new mean/ centre for that user
+user_businessFood$distanceFromCentre= sqrt(((user_businessFood$longitude - user_businessFood$newMeanLong)^2) + ((user_businessFood$latitude - user_businessFood$newMeanLat)^2))
+#normalize the distances for that user
+userSumDistancesCentreFood= ddply(user_businessFood, .(userId), summarise, sumDistanceFromCentre= sum(distanceFromCentre))
+userSumDistancesCentreFood= data.table(userSumDistancesCentreFood)
+setkey(userSumDistancesCentreFood, userId)
+setkey(user_businessFood, userId)
+user_businessFood=user_businessFood[userSumDistancesCentreFood, nomatch=0]
+user_businessFood$normDistanceFromCentre= user_businessFood$distanceFromCentre/user_businessFood$sumDistanceFromCentre
+
+#computing UMM for each business averaged over all users who went to eat there
+bizUMM=ddply(user_businessFood, .(businessId), summarise, UMM=mean(normDistanceFromCentre))
+#write.table(bizUMM, file="bizUMM.txt")
+
+#computing UMM-R 
+# finding ratings given by user to each business from reviews
+userBizFoodRating= data.frame(review.user_id, review.business_id, review.stars)
+colnames(userBizFoodRating)=c("userId", "businessId", "stars")
+userBizFoodRating=subset(userBizFoodRating, userBizFoodRating$userId %in% usersToConider)
+userBizFoodRating= subset(userBizFoodRating, userBizFoodRating$businessId %in% bizFood)
+#appending reviews to user_businessFood
+userBizFoodRating=data.table(userBizFoodRating)
+setkey(userBizFoodRating, userId, businessId)
+setkey(user_businessFood, userId, businessId)
+user_businessFood=user_businessFood[userBizFoodRating, nomatch=0]
+#computing the normDistanceFromCentre X stars 
+user_businessFood$normDistanceFromCentreXstars= user_businessFood$normDistanceFromCentre * user_businessFood$stars
+#UMMR
+bizUMMR=ddply(user_businessFood, .(businessId), summarise, UMMR= mean(normDistanceFromCentreXstars))
+#write.table(bizUMMR, file="bizUMMR.txt")
 
 #plotting histograms 
 #business histograms
@@ -134,7 +222,6 @@ bplot_1= barplot(biz_zip_count$count, main="Frequency of Unique Zipcodes", xlab=
 bplot_2= barplot(biz_main_cat_count$count, main="Frequency of Main Business Categories", xlab="Business Category",
 	ylab="Frequency", lwd=2, col="red")
 text(cex=0.8, x=bplot_2, y= 3000, labels= as.character(biz_main_cat_count$main_cat), xpd=TRUE, srt=90, pos=1)
-
 
 
 #user histograms
