@@ -50,8 +50,11 @@ colnames(biz_id_zip)= c("business_id", "zip")
 biz_id_main_cat=read.table("/Users/Work/Dropbox/UCLA Courses/Spring 2014/CS246/Project/main_categories.txt", sep="\t", header=FALSE)
 colnames(biz_id_main_cat)= c("business_id", "main_cat")
 
+bizStars=data.frame(biz_id, biz_stars)
+colnames(bizStars)=c("businessId", "stars")
 #taking business for food and restaurants
 bizFood= subset(biz_id_main_cat, biz_id_main_cat$main_cat %in% c("Food", "Restaurants"))$business_id
+
 
 library(plyr)
 biz_main_cat_count=ddply(biz_id_main_cat, .(main_cat), summarise, count=length(main_cat))
@@ -104,7 +107,6 @@ setkey(user_businessFood, userId)
 
 #take average distance of all location data points per user 
 findMean = function(user_businessFood) {
-
 userMeanLongLatFood=data.frame(user_businessFood$userId, user_businessFood$longitude, user_businessFood$latitude)
 colnames(userMeanLongLatFood)=c("userId", "longitude", "latitude")
 userMeanLongLatFood$userId= factor(userMeanLongLatFood$userId)
@@ -154,12 +156,14 @@ library(Rmisc)
 
 #any distance from mean measure greater than the upper bound of 95% confidence interval of the data points for a user are considered outliers
 user95CIUpper_Food=ddply(user_businessFood, .(userId), summarise, CIUpper=CI(normDistanceFromMean, ci=0.95)[1])
-summary(user95CIUpper_Food)
-#as suspected the median for the upper bounds of 95% CI for each user is 0.5. Thus our intuition for taking 0.5 as threshold is correct as well
+#summary(user95CIUpper_Food)
 
+#as suspected the median for the upper bounds of 95% CI for each user is 0.5. Thus our intuition for taking 0.5 as threshold is correct as well
+#Another aspect to look at is that our dataset contains some users posted many times for a particular business and probably posted a fewer number of times for other businesses, the CI also considers how many times you post 
 #removing all data points from each user group that have distance measure from mean > Upper bound of 95% CI
 user95CIUpper_Food=data.table(user95CIUpper_Food)
 setkey(user95CIUpper_Food, userId)
+setkey(user_businessFood, userId)
 user_businessFood=user_businessFood[user95CIUpper_Food, nomatch=0]
 userBizNoOutliers= subset(user_businessFood, normDistanceFromMean <= CIUpper)
 # 98 unique businesses behaved as outliers for some user or the other
@@ -171,13 +175,14 @@ userBizNoOutliers= subset(user_businessFood, normDistanceFromMean <= CIUpper)
 
 #find new mean/ centroid of location points per user after removing outlier data points
 userBizNoOutliers=findMean(userBizNoOutliers)
-userNewMean=data.frame(userBizNoOutliers$userId, userBizNoOutliers$businessId, userBizNoOutliers$meanLong.1, userBizNoOutliers$meanLat.1)
-#Take unique rows
-colnames(userNewMean)=c("userId", "businessId", "newMeanLong", "newMeanLat")
-#setting key as (userId, businessId)
+userNewMean=data.frame(userBizNoOutliers$userId, userBizNoOutliers$meanLong.1, userBizNoOutliers$meanLat.1)
+colnames(userNewMean)=c("userId", "newMeanLong", "newMeanLat")
+#removing duplicate rows
+userNewMean=unique(userNewMean)
+#setting key as userId
 userNewMean=data.table(userNewMean)
-setkey(userNewMean, userId, businessId)
-setkey(user_businessFood, userId, businessId)
+setkey(userNewMean, userId)
+setkey(user_businessFood, userId)
 #append the new means to the entire dataset 
 user_businessFood=user_businessFood[userNewMean, nomatch=0]
 #find distance of all data points per user from the new mean/ centre for that user
@@ -190,17 +195,28 @@ setkey(user_businessFood, userId)
 user_businessFood=user_businessFood[userSumDistancesCentreFood, nomatch=0]
 user_businessFood$normDistanceFromCentre= user_businessFood$distanceFromCentre/user_businessFood$sumDistanceFromCentre
 
+#why are distanceFromCentre zero and sumDistancesCentre zero for some
+summary(user_businessFood)
+
 #computing UMM for each business averaged over all users who went to eat there
-bizUMM=ddply(user_businessFood, .(businessId), summarise, UMM=mean(normDistanceFromCentre))
+bizUMM=data.frame(user_businessFood$businessId, user_businessFood$normDistanceFromCentre)
+colnames(bizUMM)=c("businessId", "normDistanceFromCentre")
+bizUMM=ddply(bizUMM, .(businessId), numcolwise(mean))
+colnames(bizUMM)=c("businessId", "UMM")
 #write.table(bizUMM, file="bizUMM.txt")
 
 #computing UMM-R 
 # finding ratings given by user to each business from reviews
 userBizFoodRating= data.frame(review.user_id, review.business_id, review.stars)
 colnames(userBizFoodRating)=c("userId", "businessId", "stars")
-userBizFoodRating=subset(userBizFoodRating, userBizFoodRating$userId %in% usersToConider)
+userBizFoodRating=subset(userBizFoodRating, userBizFoodRating$userId %in% usersToConsider)
 userBizFoodRating= subset(userBizFoodRating, userBizFoodRating$businessId %in% bizFood)
-#appending reviews to user_businessFood
+#Some users seem to have given multiple reviews to the same business, thus taking the mean stars for those
+userBizFoodRating$businessId=as.factor(userBizFoodRating$businessId)
+userBizFoodRating=ddply(userBizFoodRating, .(userId, businessId), numcolwise(mean))
+# there are 187833 unique (user, business) pairs out of 196061 pairs
+
+#appending review stars to user_businessFood
 userBizFoodRating=data.table(userBizFoodRating)
 setkey(userBizFoodRating, userId, businessId)
 setkey(user_businessFood, userId, businessId)
@@ -208,8 +224,29 @@ user_businessFood=user_businessFood[userBizFoodRating, nomatch=0]
 #computing the normDistanceFromCentre X stars 
 user_businessFood$normDistanceFromCentreXstars= user_businessFood$normDistanceFromCentre * user_businessFood$stars
 #UMMR
-bizUMMR=ddply(user_businessFood, .(businessId), summarise, UMMR= mean(normDistanceFromCentreXstars))
+bizUMMR=data.frame(user_businessFood$businessId, user_businessFood$normDistanceFromCentreXstars)
+colnames(bizUMMR)=c("businessId", "normDistanceFromCentreXstars")
+bizUMMR=ddply(bizUMMR, .(businessId), numcolwise(mean))
+colnames(bizUMMR)=c("businessId", "UMMR")
 #write.table(bizUMMR, file="bizUMMR.txt")
+
+#Evaluating relation between UMM, UMMR and average business ratings 
+bizStarsFood= subset(bizStars, bizStars$businessId %in% user_businessFood$businessId)
+bizStarsFood=data.table(bizStarsFood)
+setkey(bizStarsFood, businessId)
+bizUMM=data.table(bizUMM)
+setkey(bizUMM, businessId)
+bizUMMR=data.table(bizUMMR)
+setkey(bizUMMR, businessId)
+bizStarsFood=bizStarsFood[bizUMM, nomatch=0]
+bizStarsFood=bizStarsFood[bizUMMR, nomatch=0]
+
+plot(bizStarsFood$UMMR, bizStarsFood$stars)
+plot(bizStarsFood$UMM, bizStarsFood$stars)
+
+cor(bizStarsFood$UMMR, bizStarsFood$stars) #  0.3762939
+cor(bizStarsFood$UMM, bizStarsFood$stars) # 0.06385295  
+
 
 #plotting histograms 
 #business histograms
