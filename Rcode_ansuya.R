@@ -68,8 +68,24 @@ review.vote_useful= unlist(lapply(review_data, function(x) x$votes$useful))
 #making a data frame from user lists
 review_table= data.frame(review.id, review.post_date, review.stars, review.vote_funny, 
 	review.vote_cool, review.vote_useful, review.business_id, review.user_id)
-colnames(user_table)=c("reviewId", "postDate", "stars", "voteFunny", "voteCool", "voteUseful", "businessId", "userId")
+colnames(review_table)=c("reviewId", "postDate", "stars", "voteFunny", "voteCool", "voteUseful", "businessId", "userId")
 
+install.packages("data.table")
+library(data.table)
+
+foodBids = read.table("bid_to_food.txt")
+colnames(foodBids)=c("businessId")
+foodBids=data.table(foodBids)
+setkey(foodBids, businessId)
+businessReviewStars= data.table(review.business_id, review.stars)
+setkey(businessReviewStars, review.business_id)
+foodBids=foodBids[businessReviewStars, nomatch=0]
+vectorTable <- ddply(foodBids, .(businessId), summarize, stars = list(review.stars))
+temp = c()
+for(i in 1:nrow(vectorTable)) {
+	temp[i] = CI(as.vector(vectorTable$stars[[i]]))[3]
+}
+vectorTable$ci = temp
 
 #plotting histograms 
 #business histograms
