@@ -329,6 +329,21 @@ mean(round(pred2,0)==round(bizStarsFood$stars, 0)) #14.5% accuracy
 #what is optimistic about the regression is that the R squared value is decent and UMMR is a significant predictor but it is unable to predict well
 #Also there is no linear relationship between the two variables as visible from the plots, thus some other prediction method is needed
 
+
+#Analysing businesses in zip code 85208
+biz_85208=subset(biz_id_zip, zip==85208)$business_id
+biz_85208_data=subset(bizStarsFood, businessId %in% biz_85208)
+
+#6 food places in 85208
+cor(biz_85208_data$stars, biz_85208_data$UMMR) # 0.5408978 high
+cor(biz_85208_data$stars, biz_85208_data$UMM)  # -0.2325567 low
+
+#really good correlations with LowerCIStars
+cor(biz_85208_data$CILowerStars, biz_85208_data$UMM) #0.427692 
+cor(biz_85208_data$CILowerStars, biz_85208_data$UMMR) #0.8284506
+
+#we should find correlations between UMM/UMMR & Stars for all businesses grouped by zipcode
+
 #plotting histograms 
 #business histograms
 
