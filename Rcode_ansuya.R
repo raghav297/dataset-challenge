@@ -89,12 +89,6 @@ setkey(foodBids, businessId)
 businessReviewStars= data.table(review.business_id, review.stars)
 setkey(businessReviewStars, review.business_id)
 foodBids=foodBids[businessReviewStars, nomatch=0]
-vectorTable <- ddply(foodBids, .(businessId), summarize, stars = list(review.stars))
-temp = c()
-for(i in 1:nrow(vectorTable)) {
-	temp[i] = CI(as.vector(vectorTable$stars[[i]]))[3]
-}
-vectorTable$ci = temp
 
 #finding lat and long for all businesses that a user posted for  in Food/Restaurant category 
 user_businessFood=subset(review_table, review_table$businessId %in% bizFood)[,c(8,7)]
@@ -113,6 +107,27 @@ usersToConsider= userTwoOrMoreBiz[-indicesToRemove]
 user_businessFood=subset(user_businessFood, user_businessFood$userId %in% usersToConsider)
 #Taking 25742-291=25451 users and 6561 businesses
 
+#Computing lower bound of 95% CI of review ratings for each business
+
+##bizCIStars<- ddply(user_businessFood, .(businessId), summarize, stars = list(stars))
+##temp = c()
+##for(i in 1:nrow(bizCIStars)) {
+##	temp[i] = CI( as.vector(bizCIStars$stars[[i]]), ci=0.95 )[3]
+##}
+##bizCIStars$lowerCIStars = temp
+
+bizCIStars=ddply(user_businessFood, .(businessId), summarise, CILowerStars=CI(stars, ci=0.95)[3])
+#some business have NA values for lower bound since they only have one review rating
+bizNA= subset(bizCIStars, is.na(CILowerStars))
+bizCIStars= na.omit(bizCIStars)
+#removed those values and put the star rating for that business as the CILowerStars value
+bizNA= subset(user_businessFood, businessId %in% bizNA$businessId)
+bizNA=data.frame(bizNA$businessId, bizNA$stars)
+colnames(bizNA)=c("businessId", "CILowerStars")
+bizCIStars=rbind(bizCIStars, bizNA)
+
+
+#appending location to main data frame 
 user_businessFood=data.table(user_businessFood)
 setkey(user_businessFood, businessId)
 biz_long_lat_food=subset(biz_long_lat, biz_long_lat$businessId %in% bizFood)
@@ -120,6 +135,13 @@ biz_long_lat_food=data.table(biz_long_lat_food)
 setkey(biz_long_lat_food, businessId)
 user_businessFood=user_businessFood[biz_long_lat_food, nomatch=0]
 setkey(user_businessFood, userId)
+
+#appending lower bound of CI for star ratings to main data frame
+setkey(user_businessFood, businessId)
+bizCIStars=data.table(bizCIStars)
+setkey(bizCIStars, businessId)
+user_businessFood=user_businessFood[bizCIStars, nomatch=0]
+
 
 #take average distance of all location data points per user 
 findMean = function(user_businessFood) {
@@ -256,12 +278,56 @@ bizUMMR=data.table(bizUMMR)
 setkey(bizUMMR, businessId)
 bizStarsFood=bizStarsFood[bizUMM, nomatch=0]
 bizStarsFood=bizStarsFood[bizUMMR, nomatch=0]
+bizStarsFood=bizStarsFood[bizCIStars, nomatch=0]
+#bizStarsFood contains businessId, avg stars, UMM, UMMR, lower bound CI stars
 
 plot(bizStarsFood$UMMR, bizStarsFood$stars)
 plot(bizStarsFood$UMM, bizStarsFood$stars)
 
+#decent correlation
 cor(bizStarsFood$UMMR, bizStarsFood$stars) #  0.3762939
-cor(bizStarsFood$UMM, bizStarsFood$stars) # 0.06385295  
+cor(bizStarsFood$UMM, bizStarsFood$stars) # 0.06385295 
+
+#bad correlation
+cor(bizStarsFood$UMMR, bizStarsFood$CILowerStars) #  0.1238096
+cor(bizStarsFood$UMM, bizStarsFood$CILowerStars) # -0.04367564 
+
+
+#regression
+starsUMMR.lm= lm(stars~UMMR, data=bizStarsFood)
+summary(starsUMMR.lm)
+plot(bizStarsFood$UMMR, bizStarsFood$stars)
+abline(starsUMMR.lm, col="red", lwd=2)
+pred1=predict(starsUMMR.lm)
+
+#accuracy of prediction
+#if we compare predicted and actual stars value, not a very good prediction
+mean(round(pred1,1)==round(bizStarsFood$stars,1)) # 1.4% accuracy with 1 decimal place
+mean(round(pred1,0)==round(bizStarsFood$stars, 0)) # 14% accuracy with no decimal places 
+correct1=0
+correct2=0
+for(i in 1:length(pred1)){
+	if(round(pred1[i],0) == round(bizStarsFood$stars[i], 0)-1 | round(pred1[i],0) == round(bizStarsFood$stars[i], 0)+1
+		| round(pred1[i],0) == round(bizStarsFood$stars[i], 0))
+		correct1=correct1+1
+
+	if(round(pred1[i],1) %in% seq(round(bizStarsFood$stars[i], 1)-0.5, round(bizStarsFood$stars[i], 1)+ 0.5, by=0.1 )  )
+		correct2=correct2+1
+}
+correct1/length(pred1) # 49% accuracy for range of + -1
+correct2/length(pred1) # 16.4% accuracy for range of + - 0.5 
+
+
+#regression without intercept performs the same 
+starsUMMR.lm.noIntercept= lm(stars~UMMR-1, data=bizStarsFood)
+summary(starsUMMR.lm.noIntercept)
+pred2=predict(starsUMMR.lm.noIntercept)
+mean(pred2==bizStarsFood$stars)
+mean(round(pred2,1)==round(bizStarsFood$stars,1)) #1.4% accuracy
+mean(round(pred2,0)==round(bizStarsFood$stars, 0)) #14.5% accuracy 
+#we need more predictors
+#what is optimistic about the regression is that the R squared value is decent and UMMR is a significant predictor but it is unable to predict well
+#Also there is no linear relationship between the two variables as visible from the plots, thus some other prediction method is needed
 
 #plotting histograms 
 #business histograms
