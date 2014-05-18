@@ -1,4 +1,6 @@
 install.packages("rjson")
+install.packages("plyr")
+install.packages("MASS")
 library(rjson)
 business= "yelp_academic_dataset_business.json"
 raw_biz= scan(business, what="raw()", sep="\n")
@@ -45,9 +47,9 @@ biz_category=list(); for(i in 1:15585){ biz_category[[i]]=biz_data[[i]]$categori
 biz_stars=unlist(lapply(biz_data, function(x) x$stars))
 biz_review_count=unlist(lapply(biz_data, function(x) x$review_count))
 
-biz_id_zip=read.table("/Users/Work/Documents/CS246_Proj/dataset-challenge/bid_to_zip.txt", sep="\t", header=FALSE)
+biz_id_zip=read.table("bid_to_zip.txt", sep="\t", header=FALSE)
 colnames(biz_id_zip)= c("business_id", "zip")
-biz_id_main_cat=read.table("/Users/Work/Dropbox/UCLA Courses/Spring 2014/CS246/Project/main_categories.txt", sep="\t", header=FALSE)
+biz_id_main_cat=read.table("main_categories.txt", sep="\t", header=FALSE)
 colnames(biz_id_main_cat)= c("business_id", "main_cat")
 
 bizStars=data.frame(biz_id, biz_stars)
@@ -115,7 +117,8 @@ user_businessFood=subset(user_businessFood, user_businessFood$userId %in% usersT
 ##	temp[i] = CI( as.vector(bizCIStars$stars[[i]]), ci=0.95 )[3]
 ##}
 ##bizCIStars$lowerCIStars = temp
-
+install.packages("Rmisc")
+library(Rmisc)
 bizCIStars=ddply(user_businessFood, .(businessId), summarise, CILowerStars=CI(stars, ci=0.95)[3])
 #some business have NA values for lower bound since they only have one review rating
 bizNA= subset(bizCIStars, is.na(CILowerStars))
