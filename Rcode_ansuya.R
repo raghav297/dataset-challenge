@@ -107,25 +107,6 @@ usersToConsider= userTwoOrMoreBiz[-indicesToRemove]
 user_businessFood=subset(user_businessFood, user_businessFood$userId %in% usersToConsider)
 #Taking 25742-291=25451 users and 6561 businesses
 
-#Computing lower bound of 95% CI of review ratings for each business
-
-##bizCIStars<- ddply(user_businessFood, .(businessId), summarize, stars = list(stars))
-##temp = c()
-##for(i in 1:nrow(bizCIStars)) {
-##	temp[i] = CI( as.vector(bizCIStars$stars[[i]]), ci=0.95 )[3]
-##}
-##bizCIStars$lowerCIStars = temp
-
-bizCIStars=ddply(user_businessFood, .(businessId), summarise, CILowerStars=CI(stars, ci=0.95)[3])
-#some business have NA values for lower bound since they only have one review rating
-bizNA= subset(bizCIStars, is.na(CILowerStars))
-bizCIStars= na.omit(bizCIStars)
-#removed those values and put the star rating for that business as the CILowerStars value
-bizNA= subset(user_businessFood, businessId %in% bizNA$businessId)
-bizNA=data.frame(bizNA$businessId, bizNA$stars)
-colnames(bizNA)=c("businessId", "CILowerStars")
-bizCIStars=rbind(bizCIStars, bizNA)
-
 
 #appending location to main data frame 
 user_businessFood=data.table(user_businessFood)
@@ -135,12 +116,6 @@ biz_long_lat_food=data.table(biz_long_lat_food)
 setkey(biz_long_lat_food, businessId)
 user_businessFood=user_businessFood[biz_long_lat_food, nomatch=0]
 setkey(user_businessFood, userId)
-
-#appending lower bound of CI for star ratings to main data frame
-setkey(user_businessFood, businessId)
-bizCIStars=data.table(bizCIStars)
-setkey(bizCIStars, businessId)
-user_businessFood=user_businessFood[bizCIStars, nomatch=0]
 
 
 #take average distance of all location data points per user 
@@ -235,6 +210,31 @@ user_businessFood$normDistanceFromCentre= user_businessFood$distanceFromCentre/u
 
 #why are distanceFromCentre zero and sumDistancesCentre zero for some
 summary(user_businessFood)
+
+#Computing lower bound of 95% CI of review ratings for each business
+
+##bizCIStars<- ddply(user_businessFood, .(businessId), summarize, stars = list(stars))
+##temp = c()
+##for(i in 1:nrow(bizCIStars)) {
+##	temp[i] = CI( as.vector(bizCIStars$stars[[i]]), ci=0.95 )[3]
+##}
+##bizCIStars$lowerCIStars = temp
+
+bizCIStars=ddply(user_businessFood, .(businessId), summarise, CILowerStars=CI(stars, ci=0.95)[3])
+#some business have NA values for lower bound since they only have one review rating
+bizNA= subset(bizCIStars, is.na(CILowerStars))
+bizCIStars= na.omit(bizCIStars)
+#removed those values and put the star rating for that business as the CILowerStars value
+bizNA= subset(user_businessFood, businessId %in% bizNA$businessId)
+bizNA=data.frame(bizNA$businessId, bizNA$stars)
+colnames(bizNA)=c("businessId", "CILowerStars")
+bizCIStars=rbind(bizCIStars, bizNA)
+
+#appending lower bound of CI for star ratings to main data frame
+setkey(user_businessFood, businessId)
+bizCIStars=data.table(bizCIStars)
+setkey(bizCIStars, businessId)
+user_businessFood=user_businessFood[bizCIStars, nomatch=0]
 
 #computing UMM for each business averaged over all users who went to eat there
 bizUMM=data.frame(user_businessFood$businessId, user_businessFood$normDistanceFromCentre)
