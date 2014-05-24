@@ -42,7 +42,7 @@ write.csv(common_features, "all_features.csv")
 
 
 # Best subset regression
-Xy = common_features[c(4, 5, 9:24, 6)]
+Xy = common_features[c(4, 5, 9:38, 6)]
 out <- bestglm(Xy)
 out["BestModel"]
 
