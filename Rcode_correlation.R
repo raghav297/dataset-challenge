@@ -31,13 +31,13 @@ merged_corrTable = merge(bidZip, bizCorrTable)
 #PhoenixMap <- qmap("phoenix", zoom = 10, source = "google")
 #PhoenixMap + geom_point(aes(x = longitude, y = latitude, color = zip), data = merged_corrTable)
 
-initial_features = read.csv("features3.csv")
-colnames(common_business)[2] <- "businessId"
+initial_features = read.csv("Features4.csv")
+colnames(initial_features)[2] <- "businessId"
 
 #Merging UMM table with new features
-common_features = merge(zipWithUMM, features, by = "businessId")
+common_features = merge(zipWithUMM, initial_features, by = "businessId")
 
-corrFeatures = cor(common_features[c(5,6,9:24)])
+corrFeatures = cor(common_features[c(4,5,6,9:38)])
 write.csv(common_features, "all_features.csv")
 
 
@@ -47,16 +47,19 @@ out <- bestglm(Xy)
 out["BestModel"]
 
 #Coefficients:
-#  (Intercept)            UMM           UMMR    price_range  credit_cards2          noise          divey         casual  
-#       0.8190       -21.5713         5.4855         0.3735         0.7877         0.1686         0.6971         0.9012
+#  (Intercept)            UMM           UMMR    price_range  credit_cards2      take_outs          noise         casual          lunch  
+#       0.7696       -20.6806         5.3360         0.3009         0.5413        -0.2516         0.1542         0.4578         0.4620  
+#         wifi     wheelchair  
+#       0.2051         0.6212 
 
-
-XyWithoutUMM = Xy[c(2:19)]
+XyWithoutUMM = Xy[c(2:33)]
 out2 <- bestglm(XyWithoutUMM)
 
 #Coefficients:
-#  (Intercept)           UMMR    price_range  credit_cards2          divey         classy         casual  
-#      0.05169        0.76238        0.36454        1.08534        0.92722        0.82756        1.18974  
+#    (Intercept)             UMMR      price_range    credit_cards2        take_outs           casual            lunch             wifi  
+#      -0.002479         0.817139         0.293642         0.734543        -0.325318         0.579741         0.570728         0.228017  
+#outdoor_seating       wheelchair  
+#       0.286445         0.715851  
 
 
 dfZip = split(common_features, common_features$zip)
