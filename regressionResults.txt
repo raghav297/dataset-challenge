@@ -1,0 +1,78 @@
+$BestModel
+
+Call:
+lm(formula = y ~ ., data = data.frame(Xy[, c(bestset[-1], FALSE), 
+    drop = FALSE], y = y))
+
+Coefficients:
+  (Intercept)            UMM           UMMR    price_range  credit_cards2      take_outs          noise         casual          lunch  
+       0.7696       -20.6806         5.3360         0.3009         0.5413        -0.2516         0.1542         0.4578         0.4620  
+         wifi     wheelchair  
+       0.2051         0.6212  
+
+
+BIC
+BICq equivalent for q in (0.488001326956262, 0.594755165537063)
+Best Model:
+                 Estimate Std. Error    t value      Pr(>|t|)
+(Intercept)     0.7696246 0.10400809   7.399661  1.536848e-13
+UMM           -20.6805792 0.80273982 -25.762493 1.800035e-139
+UMMR            5.3359552 0.19912299  26.797284 3.630881e-150
+price_range     0.3009276 0.04544750   6.621434  3.840547e-11
+credit_cards2   0.5413141 0.10719687   5.049719  4.544602e-07
+take_outs      -0.2515965 0.08418835  -2.988496  2.813982e-03
+noise           0.1542106 0.03928393   3.925538  8.742641e-05
+casual          0.4578434 0.09338633   4.902682  9.682213e-07
+lunch           0.4619565 0.08677043   5.323893  1.049585e-07
+wifi            0.2050535 0.04207841   4.873129  1.124379e-06
+wheelchair      0.6212364 0.06923834   8.972433  3.732738e-19
+$BestModel
+
+Call:
+lm(formula = y ~ ., data = data.frame(Xy[, c(bestset[-1], FALSE), 
+    drop = FALSE], y = y))
+
+Coefficients:
+    (Intercept)             UMMR      price_range    credit_cards2        take_outs           casual            lunch             wifi  
+      -0.002479         0.817139         0.293642         0.734543        -0.325318         0.579741         0.570728         0.228017  
+outdoor_seating       wheelchair  
+       0.286445         0.715851  
+
+
+BIC
+BICq equivalent for q in (0.0800251808567599, 0.848261677823238)
+Best Model:
+                    Estimate Std. Error    t value     Pr(>|t|)
+(Intercept)     -0.002478564 0.10441028 -0.0237387 9.810618e-01
+UMMR             0.817139474 0.09937170  8.2230605 2.372653e-16
+price_range      0.293641998 0.04768586  6.1578424 7.812410e-10
+credit_cards2    0.734542810 0.11212219  6.5512704 6.139959e-11
+take_outs       -0.325318123 0.08158068 -3.9876859 6.744942e-05
+casual           0.579740893 0.09618440  6.0273897 1.757163e-09
+lunch            0.570727560 0.09067334  6.2943260 3.287696e-10
+wifi             0.228016647 0.04299420  5.3034283 1.173821e-07
+outdoor_seating  0.286445489 0.07178353  3.9904068 6.668212e-05
+wheelchair       0.715851223 0.07205382  9.9349516 4.275650e-23
+$BestModel
+
+Call:
+lm(formula = y ~ ., data = data.frame(Xy[, c(bestset[-1], FALSE), 
+    drop = FALSE], y = y))
+
+Coefficients:
+  (Intercept)            UMM           UMMR  credit_cards2      take_outs         waiter         classy         casual  
+      3.35628      -10.53324        3.14458        0.15465       -0.13403       -0.05785        0.20018        0.16820  
+
+
+BIC
+BICq equivalent for q in (0.246918612740677, 0.605543252485114)
+Best Model:
+                  Estimate Std. Error    t value     Pr(>|t|)
+(Intercept)     3.35627854 0.02220653 151.139266 0.000000e+00
+UMM           -10.53323564 0.17608311 -59.819682 0.000000e+00
+UMMR            3.14457841 0.04384412  71.721777 0.000000e+00
+credit_cards2   0.15465337 0.02142489   7.218397 5.856409e-13
+take_outs      -0.13402587 0.01647888  -8.133191 4.963156e-16
+waiter         -0.05785094 0.01606490  -3.601076 3.192558e-04
+classy          0.20018152 0.05544131   3.610693 3.076707e-04
+casual          0.16819810 0.01760001   9.556704 1.679668e-21
