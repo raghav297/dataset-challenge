@@ -38,8 +38,6 @@ colnames(initial_features)[2] <- "businessId"
 common_features = merge(zipWithUMM, initial_features, by = "businessId")
 
 corrFeatures = cor(common_features[c(4,5,6,9:38)])
-w
-
 
 # Best subset regression
 Xy = common_features[c(4, 5, 9:38, 6)]
@@ -107,3 +105,81 @@ coef(regfit, 8)
 # LM on attributes from first subset regression
 lmfit = lm(CILowerStars~UMM+UMMR+price_range+credit_cards2+take_outs+noise+casual+lunch+wifi+wheelchair, data = Xy)
 lmsummary= summary(lmfit)
+
+
+training_set = common_features[sample(nrow(common_features), 5884), ]
+testing_set = subset(common_features, ! common_features$businessId %in% training_set$businessId)
+lmfit = lm(CILowerStars~UMM+UMMR+price_range+credit_cards2+take_outs+noise+casual+lunch+wifi+wheelchair, data = training_set)
+pred = predict(lmfit, testing_set)
+mean(round(pred,0) == round(testing_set$CILowerStars,0))
+
+
+# Predicting with response as stars
+Xy = common_features[c(4, 5, 9:38, 3)]
+regfit = regsubsets(stars~., data = Xy, nvmax = 19)
+regsummary = summary(regfit)
+which.min(regsummary$bic)
+#11
+coef(regfit, 11)
+
+# (Intercept)             UMM            UMMR   credit_cards2       take_outs          waiter          casual          desert           lunch 
+#     3.34444862    -10.39483991      3.12383189      0.12708290     -0.11502261     -0.05810009      0.12549213      0.24060945      0.07157012 
+#outdoor_seating   good_for_kids      wheelchair 
+#     0.04535317     -0.08824469      0.07318287
+
+lmfit = lm(stars~UMM+UMMR+credit_cards2+take_outs+waiter+casual+desert+lunch+outdoor_seating+good_for_kids+wheelchair, data = Xy)
+lmsummary= summary(lmfit)
+
+training_set = common_features[sample(nrow(common_features), 5884), ]
+testing_set = subset(common_features, ! common_features$businessId %in% training_set$businessId)
+lmfit = lm(stars~UMM+UMMR+credit_cards2+take_outs+waiter+casual+desert+lunch+outdoor_seating+good_for_kids+wheelchair, data = training_set)
+pred = predict(lmfit, testing_set)
+mean(round(pred,0) == round(testing_set$stars,0)) #63%
+
+# Predicting with response as stars without UMM
+Xy = common_features[c(5, 9:38, 3)]
+regfit = regsubsets(stars~., data = Xy, nvmax = 19)
+regsummary = summary(regfit)
+which.min(regsummary$bic)
+coef(regfit, 14)
+
+lmfit = lm(stars~UMMR+credit_cards2+take_outs+waiter+noise+intimate+classy+trendy+casual+desert+lunch+delivery+outdoor_seating+wheelchair, data = Xy)
+lmsummary= summary(lmfit)
+lmfit = lm(stars~UMMR+credit_cards2+take_outs+waiter+noise+intimate+classy+trendy+casual+desert+lunch+delivery+outdoor_seating+wheelchair, data = training_set)
+pred = predict(lmfit, testing_set)
+mean(round(pred,0) == round(testing_set$stars,0)) #49$
+
+# GAM 
+Xy = common_features[c(4, 5, 9:38, 6)]
+gamfit = gam(CILowerStars~UMM+UMMR+price_range+credit_cards2+take_outs+noise+casual+lunch+wifi+wheelchair, data = Xy)
+gamsummary= summary(gamfit)
+
+# GAM for all features
+gamfit = gam(CILowerStars~., data = Xy)
+gamsummary= summary(gamfit)
+
+# Prediction for CILowerStars as response
+Xy_train = training_set[c(4, 5, 9:38, 6)]
+Xy_test = testing_set[c(4, 5, 9:38, 6)]
+
+gamfit = gam(CILowerStars~., data = Xy_train)
+gamsummary= summary(gamfit)
+pred = predict(gamfit, Xy_test)
+mean(round(pred,0) == round(Xy_test$CILowerStars,0)) #38.6%
+
+# GAM with response as stars
+Xy = common_features[c(4, 5, 9:38, 3)]
+gamfit = gam(stars~., data = Xy)
+gamsummary= summary(gamfit)
+
+# Predicting using GAM
+training_set = common_features[sample(nrow(common_features), 5884), ]
+testing_set = subset(common_features, ! common_features$businessId %in% training_set$businessId)
+
+Xy_train = training_set[c(4, 5, 9:38, 3)]
+Xy_test = testing_set[c(4, 5, 9:38, 3)]
+
+gamfit = gam(stars~., data = Xy_train)
+gamsummary= summary(gamfit)
+pred = predict(gamfit, Xy_test)
+mean(round(pred,0) == round(Xy_test$stars,0))  #63.3%
