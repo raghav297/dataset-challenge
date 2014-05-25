@@ -154,6 +154,24 @@ Xy = common_features[c(4, 5, 9:38, 6)]
 gamfit = gam(CILowerStars~UMM+UMMR+price_range+credit_cards2+take_outs+noise+casual+lunch+wifi+wheelchair, data = Xy)
 gamsummary= summary(gamfit)
 
+# GAM for all features
+gamfit = gam(CILowerStars~., data = Xy)
+gamsummary= summary(gamfit)
+
+# Prediction for CILowerStars as response
+Xy_train = training_set[c(4, 5, 9:38, 6)]
+Xy_test = testing_set[c(4, 5, 9:38, 6)]
+
+gamfit = gam(CILowerStars~., data = Xy_train)
+gamsummary= summary(gamfit)
+pred = predict(gamfit, Xy_test)
+mean(round(pred,0) == round(Xy_test$CILowerStars,0)) #38.6%
+
+# GAM with response as stars
+Xy = common_features[c(4, 5, 9:38, 3)]
+gamfit = gam(stars~., data = Xy)
+gamsummary= summary(gamfit)
+
 # Predicting using GAM
 training_set = common_features[sample(nrow(common_features), 5884), ]
 testing_set = subset(common_features, ! common_features$businessId %in% training_set$businessId)
@@ -165,12 +183,3 @@ gamfit = gam(stars~., data = Xy_train)
 gamsummary= summary(gamfit)
 pred = predict(gamfit, Xy_test)
 mean(round(pred,0) == round(Xy_test$stars,0))  #63.3%
-
-# GAM for all features
-gamfit = gam(CILowerStars~., data = Xy)
-gamsummary= summary(gamfit)
-
-# GAM with response = stars
-Xy = common_features[c(4, 5, 9:38, 3)]
-gamfit = gam(stars~., data = Xy)
-gamsummary= summary(gamfit)
