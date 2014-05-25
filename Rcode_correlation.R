@@ -29,7 +29,7 @@ bizCorrTable = subset(user_businessFood, user_businessFood$businessId %in% bizWi
 merged_corrTable = merge(bidZip, bizCorrTable)
 
 #PhoenixMap <- qmap("phoenix", zoom = 10, source = "google")
-#PhoenixMap + geom_point(aes(x = longitude, y = latitude, color = zip), data = merged_corrTable)
+#PhoenixMap + geom_point(aes(x = loangitude, y = latitude, color = zip), data = merged_corrTable)
 
 initial_features = read.csv("Features4.csv")
 colnames(initial_features)[2] <- "businessId"
@@ -38,7 +38,7 @@ colnames(initial_features)[2] <- "businessId"
 common_features = merge(zipWithUMM, initial_features, by = "businessId")
 
 corrFeatures = cor(common_features[c(4,5,6,9:38)])
-write.csv(common_features, "all_features.csv")
+w
 
 
 # Best subset regression
@@ -64,3 +64,46 @@ out2 <- bestglm(XyWithoutUMM)
 
 dfZip = split(common_features, common_features$zip)
 
+# Subset regression method 2
+regfit = regsubsets(CILowerStars~. , data = Xy, nvmax = 19)
+regsummary = summary(regfit)
+regsummary$rsq
+
+par(mfrow=c(2,2))
+plot(regsummary$rss ,xlab="Number of Variables ",ylab="RSS", type="l")
+plot(regsummary$adjr2 ,xlab="Number of Variables ", ylab="Adjusted RSq",type="l")
+which.max(regsummary$adjr2)
+#19
+points(19,regsummary$adjr2[19], col="red",cex=2,pch=20)
+
+plot(regsummary$cp ,xlab="Number of Variables ",ylab="Cp", type="l")
+which.min(regsummary$cp )
+#14
+points(14,regsummary$cp [14],col="red",cex=2,pch=20)
+
+which.min(regsummary$bic )
+#10
+plot(regsummary$bic ,xlab="Number of Variables ",ylab="BIC", type="l")
+
+plot(regfit, scale="r2")
+plot(regfit, scale="adjr2")
+plot(regfit, scale="Cp")
+plot(regfit, scale="bic")
+coef(regfit, 10)
+
+#  (Intercept)           UMM          UMMR   price_range credit_cards2     take_outs         noise        casual         lunch          wifi 
+#    0.7696246   -20.6805792     5.3359552     0.3009276     0.5413141    -0.2515965     0.1542106     0.4578434     0.4619565     0.2050535 
+#   wheelchair 
+#    0.6212364 
+
+# For prediction without UMM, UMMR
+regfit = regsubsets(CILowerStars~.-UMM-UMMR , data = Xy, nvmax = 19)
+regsummary = summary(regfit)
+which.min(regsummary$bic)
+#8
+coef(regfit, 8)
+
+
+# LM on attributes from first subset regression
+lmfit = lm(CILowerStars~UMM+UMMR+price_range+credit_cards2+take_outs+noise+casual+lunch+wifi+wheelchair, data = Xy)
+lmsummary= summary(lmfit)
