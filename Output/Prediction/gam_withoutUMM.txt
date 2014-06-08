@@ -1,0 +1,51 @@
+
+Call: gam(formula = stars ~ ., data = Xy)
+Deviance Residuals:
+     Min       1Q   Median       3Q      Max 
+-2.85648 -0.41268  0.04311  0.43958  2.14522 
+
+(Dispersion Parameter for gaussian family taken to be 0.4485)
+
+    Null Deviance: 3694.686 on 6537 degrees of freedom
+Residual Deviance: 2918.205 on 6506 degrees of freedom
+AIC: 13346.08 
+
+Number of Local Scoring Iterations: 2 
+
+Anova for Parametric Effects
+                  Df  Sum Sq Mean Sq   F value    Pr(>F)    
+UMMR               1  521.78  521.78 1163.2788 < 2.2e-16 ***
+price_range        1   23.50   23.50   52.3997 5.049e-13 ***
+credit_cards2      1   29.73   29.73   66.2717 4.669e-16 ***
+take_outs          1   19.93   19.93   44.4332 2.848e-11 ***
+smoke              1    0.65    0.65    1.4388 0.2303743    
+noise              1    2.89    2.89    6.4485 0.0111275 *  
+reservation        1    0.09    0.09    0.2078 0.6484814    
+waiter             1   10.25   10.25   22.8530 1.787e-06 ***
+romantic           1    1.89    1.89    4.2129 0.0401566 *  
+intimate           1    3.64    3.64    8.1257 0.0043780 ** 
+touristy           1    1.40    1.40    3.1314 0.0768464 .  
+hipster            1    6.52    6.52   14.5301 0.0001392 ***
+divey              1    6.21    6.21   13.8365 0.0002011 ***
+classy             1    2.51    2.51    5.5948 0.0180425 *  
+trendy             1    2.65    2.65    5.9169 0.0150232 *  
+upscale            1    0.34    0.34    0.7496 0.3866349    
+casual             1   76.09   76.09  169.6316 < 2.2e-16 ***
+desert             1    6.14    6.14   13.6898 0.0002174 ***
+latenight          1    0.17    0.17    0.3858 0.5345568    
+lunch              1   19.75   19.75   44.0268 3.500e-11 ***
+dinner             1    1.24    1.24    2.7539 0.0970672 .  
+brunch             1    0.00    0.00    0.0000 0.9967451    
+breakfast          1    1.83    1.83    4.0759 0.0435393 *  
+wifi               1    2.53    2.53    5.6424 0.0175598 *  
+delivery           1    4.63    4.63   10.3215 0.0013213 ** 
+tv                 1    0.35    0.35    0.7891 0.3744032    
+outdoor_seating    1    8.67    8.67   19.3266 1.119e-05 ***
+good_for_kids      1    0.69    0.69    1.5326 0.2157685    
+good_for_groups    1    1.25    1.25    2.7964 0.0945219 .  
+dogs               1    1.54    1.54    3.4436 0.0635424 .  
+wheelchair         1   17.62   17.62   39.2809 3.905e-10 ***
+Residuals       6506 2918.21    0.45                        
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+

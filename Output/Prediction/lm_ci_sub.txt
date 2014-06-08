@@ -1,0 +1,29 @@
+
+Call:
+lm(formula = CILowerStars ~ UMM + UMMR + price_range + credit_cards2 + 
+    take_outs + noise + casual + lunch + wifi + wheelchair, data = training_set)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-25.9683  -0.2726   0.3357   0.9869   7.9445 
+
+Coefficients:
+               Estimate Std. Error t value Pr(>|t|)    
+(Intercept)     0.70391    0.11061   6.364 2.11e-10 ***
+UMM           -20.25027    0.84844 -23.868  < 2e-16 ***
+UMMR            5.27782    0.20960  25.180  < 2e-16 ***
+price_range     0.26994    0.04845   5.571 2.64e-08 ***
+credit_cards2   0.61999    0.11397   5.440 5.55e-08 ***
+take_outs      -0.23150    0.08988  -2.576  0.01003 *  
+noise           0.13259    0.04189   3.165  0.00156 ** 
+casual          0.46528    0.09985   4.660 3.23e-06 ***
+lunch           0.49370    0.09316   5.300 1.20e-07 ***
+wifi            0.19356    0.04482   4.318 1.60e-05 ***
+wheelchair      0.63408    0.07403   8.565  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 2.51 on 5873 degrees of freedom
+Multiple R-squared:  0.2118,	Adjusted R-squared:  0.2104 
+F-statistic: 157.8 on 10 and 5873 DF,  p-value: < 2.2e-16
+

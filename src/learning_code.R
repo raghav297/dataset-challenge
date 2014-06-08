@@ -29,7 +29,7 @@ bizCorrTable = subset(user_businessFood, user_businessFood$businessId %in% bizWi
 merged_corrTable = merge(bidZip, bizCorrTable)
 
 #PhoenixMap <- qmap("phoenix", zoom = 10, source = "google")
-#PhoenixMap + geom_point(aes(x = loangitude, y = latitude, color = zip), data = merged_corrTable)
+#PhoenixMap + geom_point(aes(x = longitude, y = latitude, color = zip), data = merged_corrTable)
 
 initial_features = read.csv("Features4.csv")
 colnames(initial_features)[2] <- "businessId"
@@ -75,7 +75,7 @@ which.max(regsummary$adjr2)
 points(19,regsummary$adjr2[19], col="red",cex=2,pch=20)
 
 plot(regsummary$cp ,xlab="Number of Variables ",ylab="Cp", type="l")
-which.min(regsummary$cp )
+which.min(regsummary$cp)
 #14
 points(14,regsummary$cp [14],col="red",cex=2,pch=20)
 
@@ -134,7 +134,7 @@ training_set = common_features[sample(nrow(common_features), 5884), ]
 testing_set = subset(common_features, ! common_features$businessId %in% training_set$businessId)
 lmfit = lm(stars~UMM+UMMR+credit_cards2+take_outs+waiter+casual+desert+lunch+outdoor_seating+good_for_kids+wheelchair, data = training_set)
 pred = predict(lmfit, testing_set)
-mean(round(pred,0) == round(testing_set$stars,0)) #63%
+mean(round(pred,0) == round(testing_set$stars,0)) #60%
 
 # Predicting with response as stars without UMM
 Xy = common_features[c(5, 9:38, 3)]
@@ -183,3 +183,26 @@ gamfit = gam(stars~., data = Xy_train)
 gamsummary= summary(gamfit)
 pred = predict(gamfit, Xy_test)
 mean(round(pred,0) == round(Xy_test$stars,0))  #63.3%
+
+# Map UMM, UMMR, Dogs
+install.packages("ggmap")
+library(ggmap)
+
+latlong = user_businessFood[c(2,4,5)]
+uniq_latlong = unique(latlong)
+bizWithUMMLoc = merge(uniq_latlong, bizStarsFood)
+
+PhoenixMap <- qmap("phoenix", zoom = 9, source = "google")
+PhoenixMap + geom_point(aes(x = longitude, y = latitude, color = UMM), data = bizWithUMMLoc)
+
+PhoenixMap <- qmap("phoenix", zoom = 9, source = "google")
+PhoenixMap + geom_point(aes(x = longitude, y = latitude, color = UMMR), data = bizWithUMMLoc)
+
+bizDogs = read.csv("bizDogs.csv")
+bizDogsOnly = bizDogs[c(3,40)]
+mapDogs = merge(bizWithUMMLoc, bizDogsOnly)
+val = c("cat", "dog")
+newMapDogs = ddply(mapDogs, .(businessId, longitude, latitude), summarize, class = val[dog+1])
+PhoenixMap <- qmap("phoenix", zoom = 10, source = "google")
+PhoenixMap + geom_point(aes(x = longitude, y = latitude, colour = class), data = newMapDogs) + scale_colour_manual(values=c("blue","yellow"))+ labs(colour="Dogs/Cats")
+

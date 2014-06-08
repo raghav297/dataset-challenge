@@ -1,0 +1,31 @@
+
+Call:
+lm(formula = stars ~ UMM + UMMR + credit_cards2 + take_outs + 
+    waiter + casual + desert + lunch + outdoor_seating + good_for_kids + 
+    wheelchair, data = training_set)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-2.4739 -0.3072  0.0337  0.3362  4.2139 
+
+Coefficients:
+                 Estimate Std. Error t value Pr(>|t|)    
+(Intercept)       3.35039    0.02343 142.978  < 2e-16 ***
+UMM             -10.30461    0.18408 -55.979  < 2e-16 ***
+UMMR              3.09243    0.04548  67.998  < 2e-16 ***
+credit_cards2     0.12715    0.02306   5.514 3.65e-08 ***
+take_outs        -0.10758    0.02208  -4.873 1.13e-06 ***
+waiter           -0.06625    0.01688  -3.925 8.77e-05 ***
+casual            0.13033    0.02078   6.271 3.84e-10 ***
+desert            0.23863    0.07046   3.387 0.000712 ***
+lunch             0.07089    0.02044   3.468 0.000528 ***
+outdoor_seating   0.03765    0.01578   2.387 0.017030 *  
+good_for_kids    -0.09438    0.02129  -4.432 9.49e-06 ***
+wheelchair        0.07557    0.01606   4.706 2.59e-06 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.5444 on 5872 degrees of freedom
+Multiple R-squared:  0.4779,	Adjusted R-squared:  0.4769 
+F-statistic: 488.6 on 11 and 5872 DF,  p-value: < 2.2e-16
+
